@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Bear 2 Thumbnailer</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+  <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+  <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    #msg {
+      padding: 2vw;
+      background-color: #DD4C4F;
+      justify-content: center;
+      text-align: center;
+      display: flex;
+      color: white;
+      font-weight: bold;
+      font-size: 2em;
+    }
+    #thumbnailWidth {
+      width: 4em;
+    }
+    #resizable-square {
+      border: 2px solid #000;
+      background-color: #ddd;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-weight: bold;
+      color: grey;
+      font-size: 2em;
+    }
+    .ui-resizable-handle {
+      position: absolute;
+      background-color: #000;
+      width: 12px;
+      height: 12px;
+    }
+    .ui-resizable-se {
+      right: -5px;
+      bottom: -5px;
+      cursor: se-resize;
+    }
+    #widthURL {
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>
+    Bear 2 Thumbnailer
+  </h1>
+  <p>
+    Convert <a href="https://beta.bear.app/" target="_blank">Bear 2</a>
+    images into thumbnails by pasting markdown onto this page.
+  </p>
+  <div id="msg">Waiting for markdown to be pasted...</div>
+  <ol>
+    <li>Set your preferred thumbnail width: 
+      <div id="resizable-square" style="width: 255px; height: 128px;">
+        <div><span id="thumbnailWidth">255</span>px</div>
+      </div>
+      <em>
+        (<a id="widthURL" href="#">link &#x1F517;</a> 
+        for manual control of width via address bar)
+      </em><br>
+    </li>
+    <li>Select any/all of a note in Bear 2</li>
+    <li>
+      In Bear 2's menu, click on Edit > Copy As > Markdown (adding a 
+      <a href="https://support.apple.com/guide/mac-help/create-keyboard-shortcuts-for-apps-mchlp2271/mac" target="_blank">keyboard 
+      shortcut via System Settings</a> can make this easier)
+    </li>
+    <li>Open this page and paste by pressing &#8984;V</li>
+    <li>Return to Bear 2 and paste over your same selection using &#8984;V</li>
+  </ol>
+  <p>
+    <em>
+      Bear 2 Thumbnailer is a temporary workaround to make the transition
+      from Bear to Bear 2 easier. This tool is shared with the community 
+      as a bear hug and
+      All logic is performed directly within your browser, so your 
+      note data never leaves your computer. This Bear 2 Thumbnailer 
+      is <a href="https://github.com/bmamlin/bear2thumbnailer/">open 
+      source</a>.
+    </em>
+  </p>
+  <script>
+const DEFAULT_THUMBNAIL_WIDTH = 255;
+const THUMBNAIL_WIDTH_KEY = 'thumbnailWidth';
+
+const resizableDiv = document.getElementById("resizable-square");
+const thumbnailWidthLabel = document.getElementById('thumbnailWidth');
+const widthURL = document.getElementById('widthURL');
+
+function getURL(width) {
+    const location = window.location;
+    const protocol = location.protocol;
+    const host = location.host;
+    const pathname = location.pathname;
+    const baseUrl = `${protocol}//${host}${pathname}`;
+    return baseUrl + '?width=' + width;
+}
+
+function getQueryParamValue(paramName) {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get(paramName);
+}
+
+function isValidThumbnailWidth(value) {
+  return !isNaN(value) && value >= 149;
+}
+
+function msg(msg) {
+  document.getElementById('msg').setHTML(msg);
+}
+
+function replaceText(text) {
+  msg('');
+  var re = /(!\[\]\([^\)]+\))(<!--.*?-->)*(<!-- \{"width":(\d+)} -->)?/g;
+  var thumbnailWidth = Number(thumbnailWidthLabel.innerText);
+  if (!isValidThumbnailWidth(thumbnailWidth)) {
+    thumbnailwidth = DEFAULT_THUMBNAIL_WIDTH;
+  }
+  return text.replace(re, "$1<!-- {\"width\":" + thumbnailWidth + "} -->");
+}
+
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    msg('Thumbnailed note copied to clipboard<br>Return to same note in Bear 2 and paste with &#8984;V');
+  });
+}
+
+const widthParameter = Number(getQueryParamValue("width"));
+if (isValidThumbnailWidth(widthParameter)) {
+  resizableDiv.style.width = widthParameter + 'px';
+  resizableDiv.style.height = Math.round(widthParameter/2) + 'px';
+  widthURL.href = getURL(widthParameter);
+  localStorage.setItem(THUMBNAIL_WIDTH_KEY, widthParameter);
+} else {
+  const savedWidth = parseInt(localStorage.getItem("thumbnailWidth"));
+  if (isValidThumbnailWidth(savedWidth)) {
+    resizableDiv.style.width = savedWidth + 'px';
+    resizableDiv.style.height = Math.round(savedWidth/2) + 'px';
+    widthURL.href = getURL(savedWidth);
+  }
+}
+
+document.addEventListener('paste', (event) => {
+    event.preventDefault();
+    const text = event.clipboardData.getData('text/plain');
+    const replacedText = replaceText(text);
+    copyToClipboard(replacedText);
+});
+
+$(function() {
+    $("#resizable-square").resizable({
+        aspectRatio: 1 / 0.5,
+        minWidth: 149,
+        maxWidth: 1024,
+        handles: "se"
+    });
+});
+
+const resizeObserver = new ResizeObserver(entries => {
+  for (let entry of entries) {
+    const width = entry.contentRect.width;
+    thumbnailWidthLabel.innerText = width;
+    widthURL.href = getURL(width);
+    localStorage.setItem(THUMBNAIL_WIDTH_KEY, width);
+  }
+});
+
+resizeObserver.observe(resizableDiv);
+
+window.addEventListener('blur', function (event) {
+  msg('Waiting for markdown to be pasted...');
+});
+  </script>
+</body>
+</html>
