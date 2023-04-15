@@ -3,6 +3,8 @@
 A simple workaround for converting images into thumbnails in [Bear 2](https://beta.bear.app/).
 The thumbnailer is available at [thumbnailer.burkeware.com](https://thumbnailer.burkeware.com/).
 
+<img src="https://thumbnailer.burkeware.com/Bear%202%20Thumbnailer.gif" width="600" />
+
 ## How to use Bear 2 Thumbnailer
 
 1. Select any or all of a note within Bear 2 that contains images
