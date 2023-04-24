@@ -38,6 +38,10 @@
       color: grey;
       font-size: 2em;
     }
+    .pastebutton {
+      font-size: 1em;
+      margin-right: 0.5em;
+    }
     .ui-resizable-handle {
       position: absolute;
       background-color: #000;
@@ -102,12 +106,12 @@ const thumbnailWidthLabel = document.getElementById('thumbnailWidth');
 const widthURL = document.getElementById('widthURL');
 
 function getURL(width) {
-    const location = window.location;
-    const protocol = location.protocol;
-    const host = location.host;
-    const pathname = location.pathname;
-    const baseUrl = `${protocol}//${host}${pathname}`;
-    return baseUrl + '?width=' + width;
+  const location = window.location;
+  const protocol = location.protocol;
+  const host = location.host;
+  const pathname = location.pathname;
+  const baseUrl = `${protocol}//${host}${pathname}`;
+  return baseUrl + '?width=' + width;
 }
 
 function getQueryParamValue(paramName) {
@@ -133,10 +137,26 @@ function replaceText(text) {
   return text.replace(re, "$1<!-- {\"width\":" + thumbnailWidth + "} -->");
 }
 
-function copyToClipboard(text) {
-  navigator.clipboard.writeText(text).then(() => {
+var textForPasteViaButton;
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
     msg('Thumbnailed note copied to clipboard<br>Return to same note in Bear 2 and paste with &#8984;V');
-  });
+  } catch (err) {
+    // Browser are starting to prevent writing to clipboard outside of user-
+    // initiated event, so we have to use a button to paste.
+    textForPasteViaButton = text;
+    msg('<input type="button" class="pastebutton" onclick="pasteViaButton()" value="Click here" /> to copy to clipboard');
+  }
+}
+
+async function pasteViaButton() {
+  try {
+    await navigator.clipboard.writeText(textForPasteViaButton);
+    msg('Thumbnailed note copied to clipboard<br>Return to same note in Bear 2 and paste with &#8984;V');
+  } catch (err) {
+    msg('Not supported by your browser. Sorry.');
+  }
 }
 
 const widthParameter = Number(getQueryParamValue("width"));
@@ -154,20 +174,20 @@ if (isValidThumbnailWidth(widthParameter)) {
   }
 }
 
-document.addEventListener('paste', (event) => {
-    event.preventDefault();
-    const text = event.clipboardData.getData('text/plain');
-    const replacedText = replaceText(text);
-    copyToClipboard(replacedText);
+document.addEventListener('paste', async (event) => {
+  event.preventDefault();
+  const text = event.clipboardData.getData('text/plain');
+  const replacedText = replaceText(text);
+  copyToClipboard(replacedText);
 });
 
 $(function() {
-    $("#resizable-square").resizable({
-        aspectRatio: 1 / 0.5,
-        minWidth: 149,
-        maxWidth: 1024,
-        handles: "se"
-    });
+  $("#resizable-square").resizable({
+    aspectRatio: 1 / 0.5,
+    minWidth: 149,
+    maxWidth: 1024,
+    handles: "se"
+  });
 });
 
 const resizeObserver = new ResizeObserver(entries => {
