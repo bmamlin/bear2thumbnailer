@@ -3,7 +3,7 @@
 A simple workaround for converting images into thumbnails in [Bear 2](https://beta.bear.app/).
 The thumbnailer is available at [thumbnailer.burkeware.com](https://thumbnailer.burkeware.com/).
 
-<img src="/bear2thumbnailer.gif" width="600" />
+<img src="/bear2thumbnailer.gif" width="518" />
 
 ## How to use Bear 2 Thumbnailer
 
